@@ -1,0 +1,61 @@
+{
+  "name": "cursor-feishu",
+  "version": "1.0.0",
+  "description": "Cursor 飞书集成 — 通过飞书 WebSocket 长连接与 Cursor Headless CLI 交互",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./gateway": {
+      "types": "./dist/feishu/gateway.d.ts",
+      "default": "./dist/feishu/gateway.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run typecheck",
+    "release": "bumpp"
+  },
+  "author": "NeverMore93",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NeverMore93/cursor-feishu"
+  },
+  "homepage": "https://github.com/NeverMore93/cursor-feishu#readme",
+  "dependencies": {
+    "@larksuiteoapi/node-sdk": "^1.56.1",
+    "https-proxy-agent": "^7.0.6",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "bumpp": "^10.4.1",
+    "tsup": "^8.0.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "cursor",
+    "cursor-cli",
+    "feishu",
+    "lark",
+    "飞书",
+    "飞书机器人",
+    "ai",
+    "chatbot"
+  ],
+  "license": "MIT"
+}
