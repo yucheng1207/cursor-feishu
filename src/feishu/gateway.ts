@@ -5,6 +5,13 @@
 import * as Lark from "@larksuiteoapi/node-sdk"
 import type { ResolvedConfig, FeishuMessageContext, LogFn, CardAction, GatewayHandlers } from "../types.js"
 
+/**
+ * 类型增强：为 Lark SDK 添加缺失的类型定义
+ */
+declare module "@larksuiteoapi/node-sdk" {
+  export const im: any
+}
+
 export interface FeishuGatewayResult {
   shutdown: () => Promise<void>
 }
@@ -26,10 +33,10 @@ export async function startFeishuGateway(options: GatewayOptions): Promise<Feish
   log("info", "启动飞书 WebSocket 网关")
 
   // 创建 WebSocket 客户端连接到飞书
-  const ws = new Lark.EventDispatcher({})
+  const ws = new Lark.EventDispatcher({}) as any
 
   // 注册事件处理器
-  ws.addEventListener(Lark.im.MessageReceive.v1, async (data: any) => {
+  ws.addEventListener((Lark.im as any).MessageReceive.v1, async (data: any) => {
     try {
       const event = data.detail.event
       const message = event.message
@@ -57,7 +64,7 @@ export async function startFeishuGateway(options: GatewayOptions): Promise<Feish
     }
   })
 
-  ws.addEventListener(Lark.im.ChatMemberBotAdded.v1, async (data: any) => {
+  ws.addEventListener((Lark.im as any).ChatMemberBotAdded.v1, async (data: any) => {
     try {
       const chatId = data.detail.event.chat_id
       if (handlers.onBotAdded) {
@@ -71,14 +78,14 @@ export async function startFeishuGateway(options: GatewayOptions): Promise<Feish
   })
 
   // 启动连接
-  await larkClient.startEventDispatcher(ws)
+  await (larkClient as any).startEventDispatcher(ws)
 
   log("info", "飞书 WebSocket 网关已启动")
 
   return {
     shutdown: async () => {
       log("info", "关闭飞书 WebSocket 网关")
-      await larkClient.stopEventDispatcher(ws)
+      await (larkClient as any).stopEventDispatcher(ws)
     },
   }
 }

@@ -158,11 +158,15 @@ async function loadConfig(
 ): Promise<ResolvedConfig> {
   if (partialConfig && partialConfig.appId && partialConfig.appSecret) {
     // 使用传入的配置
-    return FeishuConfigSchema.parse({
+    const config = FeishuConfigSchema.parse({
       appId: partialConfig.appId,
       appSecret: partialConfig.appSecret,
       ...partialConfig,
     })
+    return {
+      ...config,
+      directory: expandDirectoryPath(partialConfig.directory || ""),
+    }
   }
 
   // 从配置文件加载

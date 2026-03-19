@@ -51,7 +51,7 @@ export class FeishuSender {
    */
   async sendCard(chatId: string, card: any): Promise<boolean> {
     try {
-      const res = await this.larkClient.im.message.create({
+      const res = await (this.larkClient.im.message.create as any)({
         params: {
           receive_id_type: "chat_id",
         },
@@ -93,7 +93,7 @@ export class FeishuSender {
         },
       })
 
-      this.log("debug", "消息已更新", { messageId })
+      this.log("info", "消息已更新", { messageId })
       return true
     } catch (err) {
       this.log("error", "更新消息异常", {
