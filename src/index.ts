@@ -35,6 +35,66 @@ const SERVICE_NAME = "feishu-agent-bridge"
 const LOG_PREFIX = "[feishu]"
 const isDebug = !!process.env.FEISHU_DEBUG
 
+/** 创建支持代理的 HTTP 实例包装器（如果有代理配置则使用，否则使用原生实例） */
+function createProxyAwareHttpInstance(): Lark.HttpInstance {
+  const httpProxy = process.env.HTTP_PROXY || process.env.http_proxy
+  const httpsProxy = process.env.HTTPS_PROXY || process.env.https_proxy
+
+  // 无代理配置时，直接返回默认实例（完全兼容以前的行为）
+  if (!httpProxy && !httpsProxy) {
+    return Lark.defaultHttpInstance
+  }
+
+  let httpAgent: any = undefined
+  let httpsAgent: any = undefined
+
+  try {
+    if (httpProxy) {
+      const { HttpProxyAgent: HttpProxyAgentClass } = require("http-proxy-agent")
+      httpAgent = new HttpProxyAgentClass(httpProxy)
+    }
+  } catch (err: any) {
+    console.warn(`[feishu] 无法加载 http-proxy-agent: ${err.message}`)
+  }
+
+  try {
+    if (httpsProxy) {
+      const { HttpsProxyAgent: HttpsProxyAgentClass } = require("https-proxy-agent")
+      httpsAgent = new HttpsProxyAgentClass(httpsProxy)
+    }
+  } catch (err: any) {
+    console.warn(`[feishu] 无法加载 https-proxy-agent: ${err.message}`)
+  }
+
+  if (httpAgent || httpsAgent) {
+    console.log(
+      `[feishu] 配置代理:${httpProxy ? ` HTTP=${httpProxy}` : ""}${httpsAgent ? ` HTTPS=${httpsProxy}` : ""}`
+    )
+  }
+
+  // 返回一个包装器，将 agents 注入到请求中
+  return {
+    request: async (opts: any) => {
+      const config = { ...opts, httpAgent, httpsAgent }
+      return Lark.defaultHttpInstance.request(config)
+    },
+    get: async (url: string, opts?: any) =>
+      Lark.defaultHttpInstance.get(url, { ...opts, httpAgent, httpsAgent }),
+    post: async (url: string, data?: any, opts?: any) =>
+      Lark.defaultHttpInstance.post(url, data, { ...opts, httpAgent, httpsAgent }),
+    put: async (url: string, data?: any, opts?: any) =>
+      Lark.defaultHttpInstance.put(url, data, { ...opts, httpAgent, httpsAgent }),
+    patch: async (url: string, data?: any, opts?: any) =>
+      Lark.defaultHttpInstance.patch(url, data, { ...opts, httpAgent, httpsAgent }),
+    delete: async (url: string, opts?: any) =>
+      Lark.defaultHttpInstance.delete(url, { ...opts, httpAgent, httpsAgent }),
+    head: async (url: string, opts?: any) =>
+      Lark.defaultHttpInstance.head(url, { ...opts, httpAgent, httpsAgent }),
+    options: async (url: string, opts?: any) =>
+      Lark.defaultHttpInstance.options(url, { ...opts, httpAgent, httpsAgent }),
+  }
+}
+
 /** 飞书事件传输方式 */
 export type FeishuTransport = "ws" | "http" | "both"
 
@@ -129,12 +189,13 @@ export async function createFeishuService(options: FeishuServiceOptions): Promis
 
   const transport: FeishuTransport = transportOpt ?? parseTransport(process.env.FEISHU_TRANSPORT)
 
-  // 创建 Lark 客户端
+  // 创建 Lark 客户端（支持代理）
   const larkClient = new Lark.Client({
     appId: config.appId,
     appSecret: config.appSecret,
     domain: Lark.Domain.Feishu,
     appType: Lark.AppType.SelfBuild,
+    httpInstance: createProxyAwareHttpInstance(),
   })
 
   // 获取 bot open_id
